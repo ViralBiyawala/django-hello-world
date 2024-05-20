@@ -29,6 +29,11 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['127.0.0.1', '.vercel.app', 'localhost' , 'https://mindcare-sable.vercel.app/']
 
+CORS_ALLOWED_ORIGINS = [
+    "https://mindcare-sable.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 # Application definition
 
