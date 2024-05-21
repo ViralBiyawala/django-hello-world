@@ -7,6 +7,7 @@ import json
 from django.conf import settings
 from cryptography.fernet import Fernet
 from django.views.decorators.http import require_POST
+from security import EMAIL_HOST_USER
 # import asyncio
 # import pickle
 import numpy as np
@@ -324,13 +325,13 @@ def get_register(request):
             encrypted_data = cipher_suite.encrypt(user_data.encode()).decode()
 
             # Generate verification link
-            verification_link = f'https://domain.com/verified/{encrypted_data}'
+            verification_link = f'https://mindcare-sable.vercel.app/verified/{encrypted_data}'
 
             # Send verification email
             send_mail(
                 'Verify your email',
                 f'Please click the link to verify your email: {verification_link}',
-                settings.DEFAULT_FROM_EMAIL,
+                settings.EMAIL_HOST_USER,
                 [emailid],
                 fail_silently=False,
             )
