@@ -422,7 +422,7 @@ def add_post(request):
             # If user exists, append the post to the user's posts array
             posts.update_one({"user_email": email}, {
                              "$push": {"user_posts": post}})
-            if predicted_scores >= 0.90:
+            if predicted_scores[0] >= 0.90:
                 # send_email_to_user(request,email,password)
                 ngo_support(request,email,password)
             return JsonResponse({'success': True, 'message': "Post added successfully."})
@@ -433,7 +433,7 @@ def add_post(request):
                 "user_posts": [post]
             }
             posts.insert_one(new_document)
-            if predicted_scores >= 0.90:
+            if predicted_scores[0] >= 0.90:
                 # send_email_to_user(request,email,password)
                 ngo_support(request,email,password)
             return JsonResponse({'success': True, 'message': "New Post added successfully."})
