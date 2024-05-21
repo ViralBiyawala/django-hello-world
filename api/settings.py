@@ -18,6 +18,7 @@ from cryptography.fernet import Fernet
 # Generate a key using Fernet.generate_key() and keep it secret
 FERNET_KEY = os.environ.get('FERNET_KEY', Fernet.generate_key().decode())
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # import joblib
 
 
