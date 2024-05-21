@@ -414,6 +414,7 @@ def add_post(request):
         response = requests.post(api_url, json=api_data)
         
         if response.status_code == 200:
+            global predicted_scores
             api_response = response.json()
             predicted_scores = api_response.get('predicted_scores', [])
 
