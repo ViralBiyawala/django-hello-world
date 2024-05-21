@@ -21,5 +21,5 @@ urlpatterns = [
   path('get_name/',views.get_name),
   path('get_graphs/',views.get_graphs),
   path('get_poses/',views.get_poses),
-  path('verified/<str:token>/', views.verify_email, name='verify_email'),
+  # path('verified/<str:token>/', views.verify_email, name='verify_email'),
 ]

@@ -15,6 +15,8 @@ import numpy as np
 # from backend.settings import tfidf_vectorizer, model
 import re
 import requests
+from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import make_password
 
 fernet_key = settings.FERNET_KEY  # Make sure to set this key in your Django settings
 cipher_suite = Fernet(fernet_key)
@@ -61,12 +63,12 @@ def get_logged(request):
         password = data.get('password', '')
         user_check = user_model.find_one({'user_email': user_email})
         if user_check:
-            user = user_model.find_one(
-                {'user_email': user_email, 'user_password': password})
-            if user:
-                user['_id'] = str(user['_id'])
+            # user = user_model.find_one(
+            #     {'user_email': user_email, 'user_password': password})
+            if check_password(password, user_check['user_password']):
+                user_check['_id'] = str(user_check['_id'])
                 # send_email_to_user(request,user['user_email'])
-                return JsonResponse({'message': 'Successfully logged in', 'data': user}, safe=False, status=200)
+                return JsonResponse({'message': 'Successfully logged in', 'data': user_check}, safe=False, status=200)
             else:
                 return JsonResponse({'error': 'Invalid credentials', 'message': 'Incorrect'}, status=400)
         else:
@@ -305,91 +307,25 @@ def get_register(request):
             return JsonResponse({'error': 'Password should have Uppercase, Lowercase, Special Character and Number '}, status=400)
         
         
-        # records = {
-        #     'user_name': name,
-        #     'user_password': password,
-        #     'city': city,
-        #     'user_email': emailid,
-        #     'mobile_no': mobileno,
-        # }
-        
-        # Encrypt user data
-        user_data = json.dumps({
-            'name': name,
-            'emailid': emailid,
-            'city': city,
-            'mobileno': mobileno,
-            'password': password
-        })
-
-        if name and emailid and city and mobileno and password:
-            encrypted_data = cipher_suite.encrypt(user_data.encode()).decode()
-
-            # Generate verification link
-            verification_link = f'https://mindcare-sable.vercel.app/verified/{encrypted_data}'
-
-            # Send verification email
-            send_mail(
-                'Verify your email',
-                f'Please click the link to verify your email: {verification_link}',
-                settings.EMAIL_HOST_USER,
-                [emailid],
-                fail_silently=False,
-            )
-
-            return JsonResponse({'success': True, 'message': 'Verification email sent'})
-            # user_model.insert_one(records)
-        else:
-            return JsonResponse({'error': 'Missing data'}, status=400)
-
-        # You might want to send some response back to React indicating success
-        # return JsonResponse({'success': True, 'message': 'User registered successfully'})
-
-    except Exception as e:
-        # Handle any exceptions, and return appropriate response
-        return JsonResponse({'success': False, 'error': str(e)})
-    
-
-# from django.shortcuts import render
-# from django.utils.http import urlsafe_base64_decode
-# from django.http import JsonResponse
-
-@csrf_exempt
-def verify_email(request, token):
-    try:
-        # Decrypt the data
-        decrypted_data = cipher_suite.decrypt(token.encode()).decode()
-        user_data = json.loads(decrypted_data)
-
-        name = user_data['name']
-        emailid = user_data['emailid']
-        city = user_data['city']
-        mobileno = user_data['mobileno']
-        password = user_data['password']
-
-        # Check if user already exists
-        check_exist = user_model.find_one({'user_email': emailid})
-        if check_exist:
-            return JsonResponse({'error': 'User already exists'}, status=400)
-        
-        # Hash the password before storing it
-        # hashed_password = make_password(password)
-        
-        # Create user record
         records = {
             'user_name': name,
-            'user_password': password,
+            'user_password': make_password(password),
             'city': city,
             'user_email': emailid,
             'mobile_no': mobileno,
         }
-        
-        user_model.insert_one(records)
-        return JsonResponse({'success': True, 'message': 'User verified and registered successfully'})
-    
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
+        if name and emailid and city and mobileno and password:
+            user_model.insert_one(records)
+        else:
+            return JsonResponse({'error': 'Missing data'}, status=400)
+
+        # You might want to send some response back to React indicating success
+        return JsonResponse({'success': True, 'message': 'User registered successfully'})
+
+    except Exception as e:
+        # Handle any exceptions, and return appropriate response
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 @csrf_exempt
@@ -603,8 +539,9 @@ def get_graphs(request):
     email = data.get('email')
     password = data.get('password')
     user_scores = user_model.find_one({'user_email': email,'user_password':password})
-    if("scores" in user_scores):
+    if user_scores is not None and "scores" in user_scores:
         scores = np.array(user_scores['scores']).tolist()
+        # scores = np.array(user_scores['scores']).tolist()
     else:
         scores = []
     return JsonResponse(scores, safe=False)
