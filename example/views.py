@@ -248,36 +248,36 @@ def update_profile(request):
 #     return HttpResponse("Mail Sent!!!")
 
 
-def ngo_support(request, email, password):
-    user = user_model.find_one({'user_email': email,'user_password': password})
-    user_details = {
-        'name': user['user_name'],
-        'mobile_number': user['mobile_no'],
-        'email': email
-    }
+# def ngo_support(request, email, password):
+#     user = user_model.find_one({'user_email': email,'user_password': password})
+#     user_details = {
+#         'name': user['user_name'],
+#         'mobile_number': user['mobile_no'],
+#         'email': email
+#     }
 
-    subject = f'''Urgent Concern for a {user_details['name']}\'s Well-being'''
-    message = f'''Dear Mental Health Support Foundation Team,
+#     subject = f'''Urgent Concern for a {user_details['name']}\'s Well-being'''
+#     message = f'''Dear Mental Health Support Foundation Team,
     
-We have identified a post on our platform that raises serious concerns about the user's mental health and safety. We are reaching out to seek your immediate intervention and support.
+# We have identified a post on our platform that raises serious concerns about the user's mental health and safety. We are reaching out to seek your immediate intervention and support.
 
-User Details:
-Name: {user_details['name']}
-Mobile No.: {user_details['mobile_number']}
-Email: {user_details['email']}
+# User Details:
+# Name: {user_details['name']}
+# Mobile No.: {user_details['mobile_number']}
+# Email: {user_details['email']}
 
-Given the gravity of the situation, we kindly request your assistance in connecting with the user to ensure their safety and well-being. Your expertise and resources could be invaluable in providing the necessary support and guidance during this critical time.
+# Given the gravity of the situation, we kindly request your assistance in connecting with the user to ensure their safety and well-being. Your expertise and resources could be invaluable in providing the necessary support and guidance during this critical time.
 
-Thank you for your prompt attention to this matter.
+# Thank you for your prompt attention to this matter.
 
-Sincerely,
-MindCare Support Team'''
+# Sincerely,
+# MindCare Support Team'''
 
-    email_from = 'lifesaver102023@gmail.com'
-    recipient_list = ['svspbs567@gmail.com', ]
+#     email_from = 'lifesaver102023@gmail.com'
+#     recipient_list = ['svspbs567@gmail.com', ]
 
-    send_mail(subject, message, email_from, recipient_list)
-    return HttpResponse("Mail Sent!!!")
+#     send_mail(subject, message, email_from, recipient_list)
+#     return HttpResponse("Mail Sent!!!")
 
 @csrf_exempt
 @require_POST
@@ -404,27 +404,24 @@ def add_post(request):
         existing_user = posts.find_one({"user_email": email})# Your Flask API endpoint URL
         
         api_url = "https://mhabackend.pythonanywhere.com/api/predict"
-
+        
+        user = user_model.find_one({'user_email': email,'user_password': password})
         # Data to be sent to the Flask API
         api_data = {
-            "texts": [post]
+            "texts": [post],
+            "user_name":user['user_name'],
+            "mobile_number":user['mobile_no'],
+            "email":email
         }
 
         # Send POST request to the Flask API
         response = requests.post(api_url, json=api_data)
         
-        if response.status_code == 200:
-            global predicted_scores
-            api_response = response.json()
-            predicted_scores = api_response.get('predicted_scores', [])
 
         if existing_user:
             # If user exists, append the post to the user's posts array
             posts.update_one({"user_email": email}, {
                              "$push": {"user_posts": post}})
-            if predicted_scores[0] >= 0.90:
-                # send_email_to_user(request,email,password)
-                ngo_support(request,email,password)
             return JsonResponse({'success': True, 'message': "Post added successfully."})
         else:
             # If user doesn't exist, create a new document with the post
@@ -433,9 +430,6 @@ def add_post(request):
                 "user_posts": [post]
             }
             posts.insert_one(new_document)
-            if predicted_scores[0] >= 0.90:
-                # send_email_to_user(request,email,password)
-                ngo_support(request,email,password)
             return JsonResponse({'success': True, 'message': "New Post added successfully."})
     else:
         return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
