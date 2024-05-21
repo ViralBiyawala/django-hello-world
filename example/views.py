@@ -399,16 +399,18 @@ def add_post(request):
         data = json.loads(request.body)
         password = data.get('password')
         email = data.get('email')
-        post = str(data.get('post'))
+        post = data.get('post')
+        npost = str(data.get('post'))
         # Check if the email exists in the collection
-        existing_user = posts.find_one({"user_email": email})# Your Flask API endpoint URL
+        existing_user = posts.find_one({"user_email": email})
+        # Your Flask API endpoint URL
         
         api_url = "https://mhabackend.pythonanywhere.com/api/predict"
         
         user = user_model.find_one({'user_email': email,'user_password': password})
         # Data to be sent to the Flask API
         api_data = {
-            "texts": [post],
+            "texts": [npost],
             "user_name":user['user_name'],
             "mobile_number":user['mobile_no'],
             "email":email
