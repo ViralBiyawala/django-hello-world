@@ -400,7 +400,7 @@ def add_post(request):
         password = data.get('password')
         email = data.get('email')
         post = data.get('post')
-        npost = str(data.get('post'))
+        npost = str(post["content"])
         # Check if the email exists in the collection
         existing_user = posts.find_one({"user_email": email})
         # Your Flask API endpoint URL
