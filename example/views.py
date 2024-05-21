@@ -1,9 +1,11 @@
 from django.core.mail import send_mail
-from django.shortcuts import render
+# from django.shortcuts import render
 from .models import per_con, user_model, posts
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+from django.conf import settings
+from cryptography.fernet import Fernet
 from django.views.decorators.http import require_POST
 # import asyncio
 # import pickle
@@ -12,6 +14,8 @@ import numpy as np
 # from backend.settings import tfidf_vectorizer, model
 import re
 
+fernet_key = settings.FERNET_KEY  # Make sure to set this key in your Django settings
+cipher_suite = Fernet(fernet_key)
 
 def index(request):
     return HttpResponse("<h1>Running</h1>")
@@ -299,6 +303,77 @@ def get_register(request):
             return JsonResponse({'error': 'Password should have Uppercase, Lowercase, Special Character and Number '}, status=400)
         
         
+        # records = {
+        #     'user_name': name,
+        #     'user_password': password,
+        #     'city': city,
+        #     'user_email': emailid,
+        #     'mobile_no': mobileno,
+        # }
+        
+        # Encrypt user data
+        user_data = json.dumps({
+            'name': name,
+            'emailid': emailid,
+            'city': city,
+            'mobileno': mobileno,
+            'password': password
+        })
+
+        if name and emailid and city and mobileno and password:
+            encrypted_data = cipher_suite.encrypt(user_data.encode()).decode()
+
+            # Generate verification link
+            verification_link = f'https://domain.com/verified/{encrypted_data}'
+
+            # Send verification email
+            send_mail(
+                'Verify your email',
+                f'Please click the link to verify your email: {verification_link}',
+                settings.DEFAULT_FROM_EMAIL,
+                [emailid],
+                fail_silently=False,
+            )
+
+            return JsonResponse({'success': True, 'message': 'Verification email sent'})
+            # user_model.insert_one(records)
+        else:
+            return JsonResponse({'error': 'Missing data'}, status=400)
+
+        # You might want to send some response back to React indicating success
+        # return JsonResponse({'success': True, 'message': 'User registered successfully'})
+
+    except Exception as e:
+        # Handle any exceptions, and return appropriate response
+        return JsonResponse({'success': False, 'error': str(e)})
+    
+
+# from django.shortcuts import render
+# from django.utils.http import urlsafe_base64_decode
+# from django.http import JsonResponse
+
+@csrf_exempt
+def verify_email(request, token):
+    try:
+        # Decrypt the data
+        decrypted_data = cipher_suite.decrypt(token.encode()).decode()
+        user_data = json.loads(decrypted_data)
+
+        name = user_data['name']
+        emailid = user_data['emailid']
+        city = user_data['city']
+        mobileno = user_data['mobileno']
+        password = user_data['password']
+
+        # Check if user already exists
+        check_exist = user_model.find_one({'user_email': emailid})
+        if check_exist:
+            return JsonResponse({'error': 'User already exists'}, status=400)
+        
+        # Hash the password before storing it
+        # hashed_password = make_password(password)
+        
+        # Create user record
         records = {
             'user_name': name,
             'user_password': password,
@@ -306,18 +381,13 @@ def get_register(request):
             'user_email': emailid,
             'mobile_no': mobileno,
         }
-
-        if name and emailid and city and mobileno and password:
-            user_model.insert_one(records)
-        else:
-            return JsonResponse({'error': 'Missing data'}, status=400)
-
-        # You might want to send some response back to React indicating success
-        return JsonResponse({'success': True, 'message': 'User registered successfully'})
-
+        
+        user_model.insert_one(records)
+        return JsonResponse({'success': True, 'message': 'User verified and registered successfully'})
+    
     except Exception as e:
-        # Handle any exceptions, and return appropriate response
-        return JsonResponse({'success': False, 'error': str(e)})
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
 
 
 @csrf_exempt

@@ -11,6 +11,13 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+# settings.py
+import os
+from cryptography.fernet import Fernet
+
+# Generate a key using Fernet.generate_key() and keep it secret
+FERNET_KEY = os.environ.get('FERNET_KEY', Fernet.generate_key().decode())
+
 # import joblib
 
 
